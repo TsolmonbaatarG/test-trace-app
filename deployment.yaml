@@ -1,27 +1,27 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: nextjs-demo
-  namespace: production
+  name: test-trace-app
+  namespace: test
   labels:
-    app: nextjs-demo
+    app: test-trace-app
 spec:
-  replicas: 2
+  replicas: 1
   selector:
     matchLabels:
-      app: nextjs-demo
+      app: test-trace-app
   template:
     metadata:
       labels:
-        app: nextjs-demo
+        app: test-trace-app
       annotations:
         # Pyroscope profiling
         pyroscope.io/scrape: "true"
-        pyroscope.io/application-name: "nextjs-demo"
+        pyroscope.io/application-name: "test-trace-app"
     spec:
       containers:
-      - name: nextjs-demo
-        image: <YOUR_REGISTRY>/nextjs-demo:latest
+      - name: test-trace-app
+        image: ghcr.io/tsolmonbaatarg/test-trace-app:latest
         ports:
         - containerPort: 3000
         env:
@@ -29,11 +29,12 @@ spec:
         - name: OTEL_EXPORTER_OTLP_ENDPOINT
           value: "http://otel-signoz-opentelemetry-collector-agent.monitoring.svc.cluster.local:4317"
         - name: OTEL_SERVICE_NAME
-          value: "nextjs-demo"
+          value: "test-trace-app"
         - name: OTEL_SERVICE_VERSION
           value: "1.0.0"
         - name: NODE_ENV
           value: "production"
+      
         # K8s metadata
         - name: K8S_NAMESPACE
           valueFrom:
@@ -62,15 +63,19 @@ spec:
             port: 3000
           initialDelaySeconds: 10
           periodSeconds: 5
+  
+          
+          
+          
 ---
 apiVersion: v1
 kind: Service
 metadata:
-  name: nextjs-demo
-  namespace: production
+  name: test-trace-app
+  namespace: test
 spec:
   selector:
-    app: nextjs-demo
+    app: test-trace-app
   ports:
   - port: 80
     targetPort: 3000
@@ -78,8 +83,8 @@ spec:
 apiVersion: gateway.networking.k8s.io/v1
 kind: HTTPRoute
 metadata:
-  name: nextjs-demo
-  namespace: production
+  name: test-trace-app
+  namespace: test
 spec:
   parentRefs:
   - name: qpay-gateway
@@ -92,5 +97,5 @@ spec:
         type: PathPrefix
         value: /
     backendRefs:
-    - name: nextjs-demo
+    - name: test-trace-app
       port: 80
